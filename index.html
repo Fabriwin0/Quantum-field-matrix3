@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Mirror Photon Conservation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at center, #000022, #000000);
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+            color: #00ffff;
+        }
+        
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0, 20, 40, 0.9);
+            padding: 15px;
+            border-radius: 15px;
+            border: 2px solid #00ffff;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+        
+        .control-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0, 20, 40, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #00ffff;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+        
+        .quantum-stats {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(20, 0, 40, 0.9);
+            padding: 15px;
+            border-radius: 15px;
+            border: 2px solid #ff00ff;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
+        }
+        
+        .slider {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .slider label {
+            min-width: 120px;
+            font-size: 11px;
+        }
+        
+        .slider input {
+            width: 150px;
+            margin-left: 10px;
+        }
+        
+        .quantum-button {
+            background: linear-gradient(45deg, #001144, #003366);
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+        
+        .quantum-button:hover {
+            background: linear-gradient(45deg, #003366, #0055aa);
+            box-shadow: 0 0 15px #00ffff;
+            transform: translateY(-2px);
+        }
+        
+        .entanglement-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: pulse 1s infinite;
+        }
+        
+        .entangled { background: #ff00ff; }
+        .superposition { background: #ffff00; }
+        .coherent { background: #00ff00; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        .value {
+            color: #ffff00;
+            font-weight: bold;
+        }
+        
+        .fullscreen-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(0, 20, 40, 0.9);
+            color: #00ffff;
+            border: 2px solid #00ffff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(15px);
+        }
+
+        .fullscreen-toggle:hover {
+            background: rgba(0, 40, 80, 0.9);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Override quantum-stats position when fullscreen */
+        .fullscreen-mode .quantum-stats {
+            transform: translateY(-100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <button class="fullscreen-toggle" onclick="toggleFullscreen()">👁</button>
+        
+        <div id="info">
+            <h3>⚛️ Quantum Photon-Atom System</h3>
+            <div>Total Photons: <span class="value" id="photonCount">0</span></div>
+            <div>Active Atoms: <span class="value" id="atomCount">0</span></div>
+            <div>Entangled Pairs: <span class="value" id="entangledPairs">0</span></div>
+            <div>Energy Conservation: <span class="value" id="conservation">100%</span></div>
+            <div>Quantum Coherence: <span class="value" id="coherence">0%</span></div>
+            <div>Bell State Violations: <span class="value" id="bellViolations">0</span></div>
+        </div>
+        
+        <div class="quantum-stats">
+            <h4>🔬 Quantum States</h4>
+            <div><span class="entanglement-indicator entangled"></span>EPR Pairs: <span class="value" id="eprPairs">0</span></div>
+            <div><span class="entanglement-indicator superposition"></span>Superposition: <span class="value" id="superposition">0</span></div>
+            <div><span class="entanglement-indicator coherent"></span>Coherent States: <span class="value" id="coherentStates">0</span></div>
+            <div>Decoherence Rate: <span class="value" id="decoherence">0.1%/s</span></div>
+            <div>Friction Coefficient: <span class="value" id="frictionCoeff">0.95</span></div>
+        </div>
+        
+        <div class="control-panel">
+            <div class="slider">
+                <label>Mirror Velocity:</label>
+                <input type="range" id="velocity" min="0" max="8" step="0.1" value="2">
+            </div>
+            <div class="slider">
+                <label>Quantum Field:</label>
+                <input type="range" id="field" min="0" max="15" step="0.1" value="8">
+            </div>
+            <div class="slider">
+                <label>Friction Factor:</label>
+                <input type="range" id="friction" min="0.8" max="1.0" step="0.01" value="0.95">
+            </div>
+            <div class="slider">
+                <label>Atom Density:</label>
+                <input type="range" id="atomDensity" min="5" max="50" step="1" value="20">
+            </div>
+            <div class="slider">
+                <label>Entanglement Threshold:</label>
+                <input type="range" id="entanglementThreshold" min="0.1" max="2.0" step="0.1" value="0.8">
+            </div>
+            <div>
+                <button class="quantum-button" onclick="addQuantumBurst()">Photon Burst</button>
+                <button class="quantum-button" onclick="addAtomCloud()">Atom Cloud</button>
+                <button class="quantum-button" onclick="createBellState()">Bell State</button>
+                <button class="quantum-button" onclick="toggleMirrorMovement()">Toggle Movement</button>
+                <button class="quantum-button" onclick="resetQuantumSystem()">Reset System</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Enhanced Quantum System with Real Physics
+        let scene, camera, renderer;
+        let mirror1, mirror2;
+        let photons = [];
+        let atoms = [];
+        let quantumField = [];
+        let entanglementConnections = [];
+        let time = 0;
+        let mirrorMovement = true;
+        let totalPhotons = 0;
+        let totalAtoms = 0;
+        
+        // Real quantum physics constants
+        const PLANCK_CONSTANT = 6.626e-34;
+        const LIGHT_SPEED = 0.15;
+        const FINE_STRUCTURE = 1/137; // Fine structure constant
+        const QUANTUM_COUPLING = 0.08;
+        const DECOHERENCE_RATE = 0.001;
+        const BELL_THRESHOLD = 0.707; // √2/2 for Bell inequality
+        
+        // Quantum state tracking
+        let quantumStates = {
+            entangledPairs: 0,
+            bellViolations: 0,
+            coherentStates: 0,
+            superpositionStates: 0,
+            totalEnergy: 0,
+            conservationEfficiency: 1.0
+        };
+        
+        // WebGL optimization
+        let photonInstancedMesh, atomInstancedMesh;
+        let photonInstanceMatrix, atomInstanceMatrix;
+        let photonColors, atomColors;
+        
+        function init() {
+            // Enhanced scene setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true, 
+                alpha: true,
+                powerPreference: "high-performance"
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000011, 1);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('container').appendChild(renderer.domElement);
+            
+            createEnhancedMirrors();
+            initializeQuantumParticles();
+            createQuantumFieldEnhanced();
+            setupInstancedRendering();
+            
+            camera.position.set(0, 8, 20);
+            camera.lookAt(0, 0, 0);
+            
+            // Add hover effect for fullscreen toggle
+            const toggle = document.querySelector('.fullscreen-toggle');
+            toggle.addEventListener('mouseenter', () => {
+                if (isFullscreen) toggle.style.opacity = '1';
+            });
+            toggle.addEventListener('mouseleave', () => {
+                if (isFullscreen) toggle.style.opacity = '0.4';
+            });
+            
+            animate();
+        }
+        
+        function createEnhancedMirrors() {
+            const mirrorGeometry = new THREE.PlaneGeometry(6, 8);
+            
+            //
+            const mirror1Material = new THREE.MeshPhysicalMaterial({
+                color: 0x2244ff,
+                metalness: 0.9,
+                roughness: 0.1,
+                transparent: true,
+                opacity: 0.85,
+                side: THREE.DoubleSide,
+                envMapIntensity: 1.5
+            });
+            
+            mirror1 = new THREE.Mesh(mirrorGeometry, mirror1Material);
+            mirror1.position.set(-10, 0, 0);
+            mirror1.rotation.y = Math.PI / 4;
+            mirror1.castShadow = true;
+            mirror1.receiveShadow = true;
+            scene.add(mirror1);
+            
+            const mirror2Material = new THREE.MeshPhysicalMaterial({
+                color: 0xff2244,
+                metalness: 0.9,
+                roughness: 0.1,
+                transparent: true,
+                opacity: 0.85,
+                side: THREE.DoubleSide,
+                envMapIntensity: 1.5
+            });
+            
+            mirror2 = new THREE.Mesh(mirrorGeometry, mirror2Material);
+            mirror2.position.set(10, 0, 0);
+            mirror2.rotation.y = -Math.PI / 4;
+            mirror2.castShadow = true;
+            mirror2.receiveShadow = true;
+            scene.add(mirror2);
+            
+            // Quantum field generators around mirrors
+            addQuantumFieldGenerators();
+            
+            // Enhanced lighting for quantum effects
+            const ambientLight = new THREE.AmbientLight(0x221144, 0.3);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(0, 20, 10);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+            
+            // Point lights for quantum glow
+            const pointLight1 = new THREE.PointLight(0x00ffff, 1, 20);
+            pointLight1.position.copy(mirror1.position);
+            scene.add(pointLight1);
+            
+            const pointLight2 = new THREE.PointLight(0xff00ff, 1, 20);
+            pointLight2.position.copy(mirror2.position);
+            scene.add(pointLight2);
+        }
+        
+        function addQuantumFieldGenerators() {
+            for (let i = 0; i < 4; i++) {
+                const generatorGeometry = new THREE.OctahedronGeometry(0.3);
+                const generatorMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x00ffff,
+                    transparent: true,
+                    opacity: 0.6,
+                    wireframe: true
+                });
+                
+                const generator = new THREE.Mesh(generatorGeometry, generatorMaterial);
+                const angle = (i / 4) * Math.PI * 2;
+                generator.position.set(
+                    Math.cos(angle) * 15,
+                    Math.sin(angle) * 3,
+                    Math.sin(angle * 2) * 2
+                );
+                scene.add(generator);
+            }
+        }
+        
+        function setupInstancedRendering() {
+            // Instanced photons for performance
+            const photonGeometry = new THREE.SphereGeometry(0.08, 12, 8);
+            const photonMaterial = new THREE.MeshBasicMaterial({
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            photonInstancedMesh = new THREE.InstancedMesh(photonGeometry, photonMaterial, 500);
+            photonInstanceMatrix = new THREE.Matrix4();
+            scene.add(photonInstancedMesh);
+            
+            // Instanced atoms
+            const atomGeometry = new THREE.IcosahedronGeometry(0.12, 1);
+            const atomMaterial = new THREE.MeshPhongMaterial({
+                transparent: true,
+                opacity: 0.7
+            });
+            
+            atomInstancedMesh = new THREE.InstancedMesh(atomGeometry, atomMaterial, 200);
+            atomInstanceMatrix = new THREE.Matrix4();
+            scene.add(atomInstancedMesh);
+        }
+        
+        function initializeQuantumParticles() {
+            // Initialize photons with quantum properties
+            for (let i = 0; i < 150; i++) {
+                const photon = createQuantumPhoton();
+                photons.push(photon);
+                totalPhotons++;
+            }
+            
+            // Initialize atoms
+            for (let i = 0; i < 50; i++) {
+                const atom = createQuantumAtom();
+                atoms.push(atom);
+                totalAtoms++;
+            }
+        }
+        
+        function createQuantumPhoton() {
+            const photon = {
+                position: new THREE.Vector3(
+                    (Math.random() - 0.5) * 25,
+                    (Math.random() - 0.5) * 12,
+                    (Math.random() - 0.5) * 12
+                ),
+                quantum: {
+                    velocity: new THREE.Vector3(
+                        (Math.random() - 0.5) * LIGHT_SPEED,
+                        (Math.random() - 0.5) * LIGHT_SPEED,
+                        (Math.random() - 0.5) * LIGHT_SPEED
+                    ),
+                    energy: Math.random() * 3 + 1,
+                    frequency: Math.random() * 10 + 1,
+                    phase: Math.random() * Math.PI * 2,
+                    spin: Math.random() > 0.5 ? 1 : -1,
+                    polarization: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, 0).normalize(),
+                    entangled: null,
+                    entanglementStrength: 0,
+                    coherenceTime: Math.random() * 100 + 50,
+                    decoherenceRate: DECOHERENCE_RATE * (Math.random() * 0.5 + 0.5),
+                    waveFunction: { real: 1, imaginary: 0 },
+                    bellState: null,
+                    conserved: true,
+                    interactions: 0
+                },
+                visual: {
+                    color: new THREE.Color().setHSL(Math.random(), 1, 0.7),
+                    opacity: 0.8,
+                    scale: 1
+                }
+            };
+            
+            return photon;
+        }
+        
+        function createQuantumAtom() {
+            const atom = {
+                position: new THREE.Vector3(
+                    (Math.random() - 0.5) * 20,
+                    (Math.random() - 0.5) * 10,
+                    (Math.random() - 0.5) * 10
+                ),
+                quantum: {
+                    velocity: new THREE.Vector3(
+                        (Math.random() - 0.5) * 0.02,
+                        (Math.random() - 0.5) * 0.02,
+                        (Math.random() - 0.5) * 0.02
+                    ),
+                    energy: Math.random() * 2 + 0.5,
+                    excitationLevel: 0,
+                    electronStates: [0, 0, 0], // Ground state
+                    magneticMoment: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize(),
+                    entangled: null,
+                    coherenceTime: Math.random() * 200 + 100,
+                    lastInteraction: 0,
+                    photonAbsorptions: 0,
+                    photonEmissions: 0
+                },
+                visual: {
+                    color: new THREE.Color().setHSL(0.6 + Math.random() * 0.3, 1, 0.6),
+                    opacity: 0.7,
+                    scale: 1
+                }
+            };
+            
+            return atom;
+        }
+        
+        function updateQuantumSystem() {
+            const velocityFactor = parseFloat(document.getElementById('velocity').value);
+            const fieldStrength = parseFloat(document.getElementById('field').value);
+            const frictionFactor = parseFloat(document.getElementById('friction').value);
+            const entanglementThreshold = parseFloat(document.getElementById('entanglementThreshold').value);
+            
+            updatePhotons(velocityFactor, fieldStrength, frictionFactor, entanglementThreshold);
+            updateAtoms(fieldStrength, frictionFactor);
+            updateQuantumEntanglements();
+            updateQuantumField();
+            checkBellInequalities();
+            
+            // Update conservation tracking
+            quantumStates.conservationEfficiency = calculateEnergyConservation();
+        }
+        
+        function updatePhotons(velocityFactor, fieldStrength, frictionFactor, entanglementThreshold) {
+            photons.forEach((photon, index) => {
+                if (!photon.quantum.conserved) return;
+                
+                // Apply friction to velocity
+                photon.quantum.velocity.multiplyScalar(frictionFactor);
+                
+                // Update position
+                photon.position.add(photon.quantum.velocity.clone().multiplyScalar(velocityFactor));
+                
+                // Quantum field interactions
+                const fieldInfluence = calculateQuantumFieldForce(photon.position, fieldStrength);
+                photon.position.add(fieldInfluence);
+                
+                // Mirror reflections with quantum mechanics
+                checkQuantumReflection(photon, mirror1, -1, frictionFactor);
+                checkQuantumReflection(photon, mirror2, 1, frictionFactor);
+                
+                // Photon-atom interactions
+                checkPhotonAtomInteractions(photon);
+                
+                // Quantum entanglement based on proximity and energy
+                checkPhotonEntanglement(photon, index, entanglementThreshold);
+                
+                // Update quantum properties
+                updatePhotonQuantumState(photon);
+                
+                // Boundary reset with quantum tunneling probability
+                if (shouldQuantumTunnel(photon) || isOutOfBounds(photon.position)) {
+                    resetQuantumPhoton(photon);
+                }
+                
+                // Update visual representation
+                updatePhotonVisuals(photon, index);
+            });
+        }
+        
+        function updateAtoms(fieldStrength, frictionFactor) {
+            atoms.forEach((atom, index) => {
+                // Brownian motion with quantum corrections
+                const brownianForce = new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.001,
+                    (Math.random() - 0.5) * 0.001,
+                    (Math.random() - 0.5) * 0.001
+                );
+                atom.quantum.velocity.add(brownianForce);
+                atom.quantum.velocity.multiplyScalar(frictionFactor * 0.99);
+                
+                // Update position
+                atom.position.add(atom.quantum.velocity);
+                
+                // Quantum field coupling
+                const fieldCoupling = calculateQuantumFieldForce(atom.position, fieldStrength * 0.1);
+                atom.position.add(fieldCoupling);
+                
+                // Spontaneous emission and absorption
+                updateAtomicTransitions(atom);
+                
+                // Check for atom-atom interactions
+                checkAtomEntanglement(atom, index);
+                
+                // Update visuals
+                updateAtomVisuals(atom, index);
+                
+                // Boundary conditions
+                if (isOutOfBounds(atom.position)) {
+                    resetQuantumAtom(atom);
+                }
+            });
+        }
+        
+        function checkQuantumReflection(photon, mirror, side, frictionFactor) {
+            const distance = photon.position.distanceTo(mirror.position);
+            const mirrorNormal = new THREE.Vector3(side, 0, 0);
+            
+            if (distance < 3.5) {
+                // Quantum reflection with probability based on energy
+                const reflectionProbability = Math.min(0.95, photon.quantum.energy / 4);
+                
+                if (Math.random() < reflectionProbability) {
+                    // Specular reflection
+                    const incident = photon.quantum.velocity.clone();
+                    const reflected = incident.clone().sub(mirrorNormal.clone().multiplyScalar(2 * incident.dot(mirrorNormal)));
+                    photon.quantum.velocity = reflected;
+                    
+                    // Energy conservation with friction loss
+                    photon.quantum.energy *= frictionFactor * 0.98;
+                    
+                    // Phase shift on reflection
+                    photon.quantum.phase += Math.PI;
+                    
+                    // Polarization rotation
+                    rotatePolarization(photon, Math.PI / 6);
+                    
+                    // Create quantum interference pattern
+                    createInterferenceEffect(photon.position.clone());
+                    
+                    photon.quantum.interactions++;
+                } else {
+                    // Quantum tunneling through mirror
+                    photon.quantum.energy *= 0.7;
+                    photon.quantum.phase += Math.PI / 2;
+                }
+            }
+        }
+        
+        function checkPhotonAtomInteractions(photon) {
+            atoms.forEach(atom => {
+                const distance = photon.position.distanceTo(atom.position);
+                
+                if (distance < 0.8) {
+                    const interactionProbability = calculateInteractionProbability(photon, atom);
+                    
+                    if (Math.random() < interactionProbability) {
+                        // Absorption/emission process
+                        if (atom.quantum.excitationLevel === 0 && photon.quantum.energy > 1.5) {
+                            // Absorption
+                            atom.quantum.excitationLevel = 1;
+                            atom.quantum.energy += photon.quantum.energy * 0.8;
+                            photon.quantum.energy *= 0.2;
+                            atom.quantum.photonAbsorptions++;
+                            
+                            // Create entanglement
+                            createPhotonAtomEntanglement(photon, atom);
+                            
+                        } else if (atom.quantum.excitationLevel > 0) {
+                            // Stimulated emission
+                            atom.quantum.excitationLevel = 0;
+                            photon.quantum.energy += atom.quantum.energy * 0.5;
+                            atom.quantum.energy *= 0.5;
+                            atom.quantum.photonEmissions++;
+                            
+                            // Create coherent photon
+                            createStimulatedPhoton(atom, photon);
+                        }
+                        
+                        atom.quantum.lastInteraction = time;
+                    }
+                }
+            });
+        }
+        
+        function checkPhotonEntanglement(photon, index, threshold) {
+            for (let i = index + 1; i < photons.length; i++) {
+                const otherPhoton = photons[i];
+                const distance = photon.position.distanceTo(otherPhoton.position);
+                
+                if (distance < threshold && !photon.quantum.entangled && !otherPhoton.quantum.entangled) {
+                    const entanglementProbability = calculateEntanglementProbability(photon, otherPhoton, distance);
+                    
+                    if (Math.random() < entanglementProbability) {
+                        createQuantumEntanglement(photon, otherPhoton);
+                        break;
+                    }
+                }
+            }
+        }
+        
+        function createQuantumEntanglement(photon1, photon2) {
+            // Create EPR pair
+            photon1.quantum.entangled = photon2;
+            photon2.quantum.entangled = photon1;
+            
+            // Synchronized quantum properties
+            const sharedPhase = (photon1.quantum.phase + photon2.quantum.phase) / 2;
+            photon1.quantum.phase = sharedPhase;
+            photon2.quantum.phase = sharedPhase + Math.PI; // Anti-correlated
+            
+            photon1.quantum.entanglementStrength = Math.random() * 0.5 + 0.7;
+            photon2.quantum.entanglementStrength = photon1.quantum.entanglementStrength;
+            
+            // Create Bell state
+            const bellStates = ['Φ+', 'Φ-', 'Ψ+', 'Ψ-'];
+            const bellState = bellStates[Math.floor(Math.random() * 4)];
+            photon1.quantum.bellState = bellState;
+            photon2.quantum.bellState = bellState;
+            
+            quantumStates.entangledPairs++;
+            
+            // Visual connection
+            createEntanglementVisualization(photon1, photon2);
+        }
+        
+        function calculateEntanglementProbability(photon1, photon2, distance) {
+            const energyFactor = Math.min(photon1.quantum.energy, photon2.quantum.energy) / 3;
+            const distanceFactor = Math.exp(-distance * 2);
+            const phaseFactor = Math.cos(Math.abs(photon1.quantum.phase - photon2.quantum.phase));
+            const velocityAlignment = photon1.quantum.velocity.dot(photon2.quantum.velocity) / 
+                                    (photon1.quantum.velocity.length() * photon2.quantum.velocity.length());
+            
+            return energyFactor * distanceFactor * Math.abs(phaseFactor) * Math.abs(velocityAlignment) * 0.05;
+        }
+        
+        function updateQuantumEntanglements() {
+            photons.forEach(photon => {
+                if (photon.quantum.entangled) {
+                    const partner = photon.quantum.entangled;
+                    
+                    // Maintain entanglement correlation
+                    if (partner.quantum.conserved) {
+                        // Synchronize spins (anti-correlated)
+                        partner.quantum.spin = -photon.quantum.spin;
+                        
+                        // Phase correlation with decoherence
+                        const phaseDrift = photon.quantum.decoherenceRate * time;
+                        partner.quantum.phase = photon.quantum.phase + Math.PI + phaseDrift;
+                        
+                        // Energy correlation
+                        const totalEnergy = photon.quantum.energy + partner.quantum.energy;
+                        const energyFluctuation = (Math.random() - 0.5) * 0.01;
+                        photon.quantum.energy = totalEnergy / 2 + energyFluctuation;
+                        partner.quantum.energy = totalEnergy / 2 - energyFluctuation;
+                        
+                        // Decoherence check
+                        photon.quantum.coherenceTime -= 1;
+                        if (photon.quantum.coherenceTime <= 0 || Math.random() < photon.quantum.decoherenceRate) {
+                            breakEntanglement(photon, partner);
+                        }
+                    } else {
+                        photon.quantum.entangled = null;
+                        quantumStates.entangledPairs = Math.max(0, quantumStates.entangledPairs - 1);
+                    }
+                }
+            });
+        }
+        
+        function checkBellInequalities() {
+            // Check Bell's inequality violations for entangled pairs
+            photons.forEach(photon => {
+                if (photon.quantum.entangled && photon.quantum.bellState) {
+                    const partner = photon.quantum.entangled;
+                    
+                    // Calculate correlation for different measurement angles
+                    const angles = [0, Math.PI/4, Math.PI/2, 3*Math.PI/4];
+                    let correlations = [];
+                    
+                    angles.forEach(angle => {
+                        const measurement1 = Math.cos(photon.quantum.phase + angle);
+                        const measurement2 = Math.cos(partner.quantum.phase + angle);
+                        correlations.push(measurement1 * measurement2);
+                    });
+                    
+                    // CHSH inequality: |E(a,b) - E(a,b') + E(a',b) + E(a',b')| ≤ 2
+                    const chshValue = Math.abs(correlations[0] - correlations[1] + correlations[2] + correlations[3]);
+                    
+                    if (chshValue > 2) {
+                        quantumStates.bellViolations++;
+                    }
+                }
+            });
+        }
+        
+        function updatePhotonQuantumState(photon) {
+            // Update wave function
+            const decoherence = photon.quantum.decoherenceRate * time;
+            photon.quantum.waveFunction.real *= Math.exp(-decoherence);
+            photon.quantum.waveFunction.imaginary *= Math.exp(-decoherence);
+            
+            // Normalize
+            const norm = Math.sqrt(
+                photon.quantum.waveFunction.real ** 2 + 
+                photon.quantum.waveFunction.imaginary ** 2
+            );
+            if (norm > 0) {
+                photon.quantum.waveFunction.real /= norm;
+                photon.quantum.waveFunction.imaginary /= norm;
+            }
+            
+            // Update phase evolution
+            photon.quantum.phase += photon.quantum.frequency * 0.016;
+            
+            // Coherence tracking
+            if (norm > 0.8) {
+                quantumStates.coherentStates++;
+            }
+            
+            // Superposition detection
+            if (Math.abs(photon.quantum.waveFunction.real) > 0.5 && 
+                Math.abs(photon.quantum.waveFunction.imaginary) > 0.5) {
+                quantumStates.superpositionStates++;
+            }
+        }
+        
+        function updateAtomicTransitions(atom) {
+            // Spontaneous emission probability
+            if (atom.quantum.excitationLevel > 0) {
+                const emissionProbability = 0.001 * atom.quantum.excitationLevel;
+                
+                if (Math.random() < emissionProbability) {
+                    // Emit photon
+                    const emittedPhoton = createEmittedPhoton(atom);
+                    photons.push(emittedPhoton);
+                    totalPhotons++;
+                    
+                    atom.quantum.excitationLevel = Math.max(0, atom.quantum.excitationLevel - 1);
+                    atom.quantum.energy *= 0.8;
+                    atom.quantum.photonEmissions++;
+                }
+            }
+            
+            // Energy level transitions
+            if (time - atom.quantum.lastInteraction > 100) {
+                atom.quantum.excitationLevel = Math.max(0, atom.quantum.excitationLevel - 1);
+            }
+        }
+        
+        function createEmittedPhoton(atom) {
+            const direction = new THREE.Vector3(
+                Math.random() - 0.5,
+                Math.random() - 0.5,
+                Math.random() - 0.5
+            ).normalize();
+            
+            const photon = createQuantumPhoton();
+            photon.position.copy(atom.position);
+            photon.quantum.velocity = direction.multiplyScalar(LIGHT_SPEED);
+            photon.quantum.energy = atom.quantum.energy * 0.3;
+            photon.quantum.frequency = photon.quantum.energy / PLANCK_CONSTANT * 1e30; // Scaled for visualization
+            photon.visual.color.setHSL(0.1 + atom.quantum.energy * 0.2, 1, 0.8);
+            
+            return photon;
+        }
+        
+        function createStimulatedPhoton(atom, originalPhoton) {
+            const stimulatedPhoton = createQuantumPhoton();
+            stimulatedPhoton.position.copy(atom.position);
+            stimulatedPhoton.quantum.velocity.copy(originalPhoton.quantum.velocity);
+            stimulatedPhoton.quantum.phase = originalPhoton.quantum.phase;
+            stimulatedPhoton.quantum.polarization.copy(originalPhoton.quantum.polarization);
+            stimulatedPhoton.quantum.energy = originalPhoton.quantum.energy;
+            stimulatedPhoton.visual.color.copy(originalPhoton.visual.color);
+            
+            photons.push(stimulatedPhoton);
+            totalPhotons++;
+            
+            // Create coherent state
+            quantumStates.coherentStates++;
+        }
+        
+        function calculateQuantumFieldForce(position, strength) {
+            const force = new THREE.Vector3();
+            
+            // Quantum vacuum fluctuations
+            const vacuumFluctuation = new THREE.Vector3(
+                Math.sin(position.x * 0.1 + time) * 0.001,
+                Math.cos(position.y * 0.15 + time * 1.3) * 0.001,
+                Math.sin(position.z * 0.08 + time * 0.7) * 0.001
+            );
+            
+            // Zero-point energy effects
+            const zeroPoint = new THREE.Vector3(
+                Math.random() - 0.5,
+                Math.random() - 0.5,
+                Math.random() - 0.5
+            ).multiplyScalar(0.0005);
+            
+            force.add(vacuumFluctuation).add(zeroPoint);
+            force.multiplyScalar(strength);
+            
+            return force;
+        }
+        
+        function calculateInteractionProbability(photon, atom) {
+            // Cross-section calculation based on quantum mechanics
+            const energyResonance = Math.exp(-Math.abs(photon.quantum.energy - atom.quantum.energy) / 2);
+            const spatialOverlap = Math.exp(-photon.position.distanceTo(atom.position) * 2);
+            const transitionProbability = atom.quantum.excitationLevel === 0 ? 0.1 : 0.05;
+            
+            return energyResonance * spatialOverlap * transitionProbability;
+        }
+        
+        function createPhotonAtomEntanglement(photon, atom) {
+            // Create photon-atom entanglement
+            photon.quantum.entangled = atom;
+            atom.quantum.entangled = photon;
+            
+            // Shared quantum state
+            photon.quantum.entanglementStrength = 0.8;
+            
+            // Energy-momentum correlation
+            const totalMomentum = photon.quantum.velocity.clone().add(atom.quantum.velocity);
+            photon.quantum.velocity = totalMomentum.clone().multiplyScalar(0.7);
+            atom.quantum.velocity = totalMomentum.clone().multiplyScalar(0.3);
+        }
+        
+        function checkAtomEntanglement(atom, index) {
+            for (let i = index + 1; i < atoms.length; i++) {
+                const otherAtom = atoms[i];
+                const distance = atom.position.distanceTo(otherAtom.position);
+                
+                if (distance < 1.2 && !atom.quantum.entangled && !otherAtom.quantum.entangled) {
+                    const entanglementProb = Math.exp(-distance) * 0.001;
+                    
+                    if (Math.random() < entanglementProb) {
+                        // Create atomic entanglement
+                        atom.quantum.entangled = otherAtom;
+                        otherAtom.quantum.entangled = atom;
+                        
+                        // Correlate magnetic moments
+                        otherAtom.quantum.magneticMoment = atom.quantum.magneticMoment.clone().negate();
+                        
+                        quantumStates.entangledPairs++;
+                    }
+                }
+            }
+        }
+        
+        function updatePhotonVisuals(photon, index) {
+            // Update color based on energy and quantum state
+            const hue = (photon.quantum.frequency * 0.01) % 1;
+            const saturation = photon.quantum.entangled ? 1 : 0.7;
+            const lightness = 0.3 + photon.quantum.energy * 0.2;
+            
+            photon.visual.color.setHSL(hue, saturation, lightness);
+            photon.visual.opacity = 0.4 + Math.abs(Math.sin(photon.quantum.phase)) * 0.4;
+            photon.visual.scale = 0.8 + photon.quantum.energy * 0.3;
+            
+            // Update instanced mesh
+            photonInstanceMatrix.setPosition(photon.position.x, photon.position.y, photon.position.z);
+            photonInstanceMatrix.makeScale(photon.visual.scale, photon.visual.scale, photon.visual.scale);
+            photonInstancedMesh.setMatrixAt(index, photonInstanceMatrix);
+            photonInstancedMesh.setColorAt(index, photon.visual.color);
+        }
+        
+        function updateAtomVisuals(atom, index) {
+            // Color based on excitation level
+            const baseHue = 0.6;
+            const excitationHue = baseHue + atom.quantum.excitationLevel * 0.2;
+            const brightness = 0.4 + atom.quantum.excitationLevel * 0.4;
+            
+            atom.visual.color.setHSL(excitationHue, 1, brightness);
+            atom.visual.opacity = 0.5 + atom.quantum.excitationLevel * 0.3;
+            atom.visual.scale = 1 + atom.quantum.excitationLevel * 0.5;
+            
+            // Update instanced mesh
+            atomInstanceMatrix.setPosition(atom.position.x, atom.position.y, atom.position.z);
+            atomInstanceMatrix.makeScale(atom.visual.scale, atom.visual.scale, atom.visual.scale);
+            atomInstancedMesh.setMatrixAt(index, atomInstanceMatrix);
+            atomInstancedMesh.setColorAt(index, atom.visual.color);
+        }
+        
+        function createEntanglementVisualization(particle1, particle2) {
+            const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+                particle1.position,
+                particle2.position
+            ]);
+            
+            const lineMaterial = new THREE.LineBasicMaterial({
+                color: 0xff00ff,
+                transparent: true,
+                opacity: 0.6,
+                linewidth: 2
+            });
+            
+            const line = new THREE.Line(lineGeometry, lineMaterial);
+            scene.add(line);
+            entanglementConnections.push(line);
+            
+            // Animate and remove
+            let opacity = 0.6;
+            const fadeOut = () => {
+                opacity -= 0.02;
+                line.material.opacity = opacity;
+                
+                if (opacity > 0) {
+                    requestAnimationFrame(fadeOut);
+                } else {
+                    scene.remove(line);
+                    const index = entanglementConnections.indexOf(line);
+                    if (index > -1) entanglementConnections.splice(index, 1);
+                }
+            };
+            fadeOut();
+        }
+        
+        function createInterferenceEffect(position) {
+            const interferenceGeometry = new THREE.RingGeometry(0, 1, 32);
+            const interferenceMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00ffff,
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide
+            });
+            
+            const interference = new THREE.Mesh(interferenceGeometry, interferenceMaterial);
+            interference.position.copy(position);
+            scene.add(interference);
+            
+            // Animate interference pattern
+            let scale = 0;
+            const animateInterference = () => {
+                scale += 0.1;
+                interference.scale.setScalar(scale);
+                interference.material.opacity = Math.max(0, 0.8 - scale * 0.2);
+                interference.rotation.z += 0.1;
+                
+                if (scale < 4) {
+                    requestAnimationFrame(animateInterference);
+                } else {
+                    scene.remove(interference);
+                }
+            };
+            animateInterference();
+        }
+        
+        function rotatePolarization(photon, angle) {
+            const rotationMatrix = new THREE.Matrix3().makeRotationZ(angle);
+            photon.quantum.polarization.applyMatrix3(rotationMatrix);
+        }
+        
+        function shouldQuantumTunnel(photon) {
+            // Quantum tunneling probability based on energy and barrier
+            const tunnelProbability = Math.exp(-2 * Math.sqrt(2 * (3 - photon.quantum.energy)));
+            return Math.random() < tunnelProbability * 0.001;
+        }
+        
+        function breakEntanglement(photon1, photon2) {
+            photon1.quantum.entangled = null;
+            photon2.quantum.entangled = null;
+            photon1.quantum.entanglementStrength = 0;
+            photon2.quantum.entanglementStrength = 0;
+            photon1.quantum.bellState = null;
+            photon2.quantum.bellState = null;
+            
+            quantumStates.entangledPairs = Math.max(0, quantumStates.entangledPairs - 1);
+        }
+        
+        function calculateEnergyConservation() {
+            let totalEnergy = 0;
+            photons.forEach(p => totalEnergy += p.quantum.energy);
+            atoms.forEach(a => totalEnergy += a.quantum.energy);
+            
+            const expectedEnergy = quantumStates.totalEnergy || totalEnergy;
+            if (!quantumStates.totalEnergy) quantumStates.totalEnergy = totalEnergy;
+            
+            return Math.min(1, totalEnergy / expectedEnergy);
+        }
+        
+        function updateMirrors() {
+            if (!mirrorMovement) return;
+            
+            const amplitude = 3;
+            const frequency = 0.3;
+            
+            // Enhanced mirror movement with quantum effects
+            mirror1.position.x = -10 + Math.sin(time * frequency) * amplitude;
+            mirror2.position.x = 10 + Math.sin(time * frequency + Math.PI) * amplitude;
+            
+            // Quantum oscillation
+            mirror1.rotation.y = Math.PI / 4 + Math.sin(time * 0.5) * 0.3;
+            mirror2.rotation.y = -Math.PI / 4 + Math.sin(time * 0.5 + Math.PI) * 0.3;
+            
+            // Vertical oscillation
+            mirror1.position.y = Math.sin(time * 0.7) * 1.5;
+            mirror2.position.y = Math.sin(time * 0.7 + Math.PI / 2) * 1.5;
+        }
+        
+        function updateQuantumField() {
+            quantumField.forEach(field => {
+                field.rotation.y += 0.002;
+                field.rotation.x += 0.001;
+                field.rotation.z += 0.0005;
+                
+                // Update field intensity based on quantum activity
+                const activity = (quantumStates.entangledPairs + quantumStates.coherentStates) * 0.1;
+                field.material.opacity = 0.2 + activity;
+            });
+        }
+        
+        function createQuantumFieldEnhanced() {
+            // Multiple field layers
+            for (let layer = 0; layer < 3; layer++) {
+                const fieldGeometry = new THREE.BufferGeometry();
+                const fieldPositions = [];
+                const fieldColors = [];
+                
+                const particleCount = 2000 - layer * 500;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const radius = 30 + layer * 10;
+                    const phi = Math.random() * Math.PI * 2;
+                    const theta = Math.random() * Math.PI;
+                    
+                    fieldPositions.push(
+                        radius * Math.sin(theta) * Math.cos(phi) * (Math.random() * 0.5 + 0.5),
+                        radius * Math.sin(theta) * Math.sin(phi) * (Math.random() * 0.5 + 0.5),
+                        radius * Math.cos(theta) * (Math.random() * 0.5 + 0.5)
+                    );
+                    
+                    const intensity = Math.random();
+                    const hue = layer * 0.3 + intensity * 0.2;
+                    const color = new THREE.Color().setHSL(hue, 0.8, intensity * 0.5);
+                    fieldColors.push(color.r, color.g, color.b);
+                }
+                
+                fieldGeometry.setAttribute('position', new THREE.Float32BufferAttribute(fieldPositions, 3));
+                fieldGeometry.setAttribute('color', new THREE.Float32BufferAttribute(fieldColors, 3));
+                
+                const fieldMaterial = new THREE.PointsMaterial({
+                    size: 0.05 + layer * 0.02,
+                    transparent: true,
+                    opacity: 0.3 - layer * 0.1,
+                    vertexColors: true,
+                    blending: THREE.AdditiveBlending
+                });
+                
+                const field = new THREE.Points(fieldGeometry, fieldMaterial);
+                scene.add(field);
+                quantumField.push(field);
+            }
+        }
+        
+        function updateUI() {
+            const activePhotons = photons.filter(p => p.quantum.conserved).length;
+            const activeAtoms = atoms.filter(a => a.quantum.energy > 0.1).length;
+            const entangledPairs = quantumStates.entangledPairs;
+            const conservation = (quantumStates.conservationEfficiency * 100);
+            const coherence = (quantumStates.coherentStates / Math.max(1, activePhotons) * 100);
+            const distance = mirror1.position.distanceTo(mirror2.position);
+            const decoherenceRate = DECOHERENCE_RATE * 100;
+            const frictionCoeff = parseFloat(document.getElementById('friction').value);
+            
+            document.getElementById('photonCount').textContent = activePhotons;
+            document.getElementById('atomCount').textContent = activeAtoms;
+            document.getElementById('entangledPairs').textContent = entangledPairs;
+            document.getElementById('conservation').textContent = conservation.toFixed(1) + '%';
+            document.getElementById('coherence').textContent = coherence.toFixed(1) + '%';
+            document.getElementById('bellViolations').textContent = quantumStates.bellViolations;
+            
+            document.getElementById('eprPairs').textContent = entangledPairs;
+            document.getElementById('superposition').textContent = quantumStates.superpositionStates;
+            document.getElementById('coherentStates').textContent = quantumStates.coherentStates;
+            document.getElementById('decoherence').textContent = decoherenceRate.toFixed(2) + '%/s';
+            document.getElementById('frictionCoeff').textContent = frictionCoeff;
+            
+            // Reset counters
+            quantumStates.coherentStates = 0;
+            quantumStates.superpositionStates = 0;
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            time += 0.016;
+            
+            updateQuantumSystem();
+            updateMirrors();
+            updateUI();
+            
+            // Update instanced meshes
+            photonInstancedMesh.instanceMatrix.needsUpdate = true;
+            if (photonInstancedMesh.instanceColor) photonInstancedMesh.instanceColor.needsUpdate = true;
+            
+            atomInstancedMesh.instanceMatrix.needsUpdate = true;
+            if (atomInstancedMesh.instanceColor) atomInstancedMesh.instanceColor.needsUpdate = true;
+            
+            renderer.render(scene, camera);
+        }
+        
+        // Control functions
+        function addQuantumBurst() {
+            const burstCount = 30;
+            for (let i = 0; i < burstCount; i++) {
+                const photon = createQuantumPhoton();
+                photon.position.set(0, 0, 0);
+                photon.quantum.velocity.set(
+                    (Math.random() - 0.5) * LIGHT_SPEED * 3,
+                    (Math.random() - 0.5) * LIGHT_SPEED * 3,
+                    (Math.random() - 0.5) * LIGHT_SPEED * 3
+                );
+                photon.quantum.energy = Math.random() * 4 + 2;
+                photon.visual.color.setHSL(Math.random(), 1, 0.8);
+                
+                photons.push(photon);
+                totalPhotons++;
+            }
+        }
+        
+        function addAtomCloud() {
+            const atomCount = 15;
+            for (let i = 0; i < atomCount; i++) {
+                const atom = createQuantumAtom();
+                atom.position.set(
+                    (Math.random() - 0.5) * 8,
+                    (Math.random() - 0.5) * 4,
+                    (Math.random() - 0.5) * 4
+                );
+                atom.quantum.energy = Math.random() * 2 + 1;
+                
+                atoms.push(atom);
+                totalAtoms++;
+            }
+        }
+        
+        function createBellState() {
+            // Create entangled photon pair in Bell state
+            if (photons.length >= 2) {
+                const photon1 = photons[Math.floor(Math.random() * photons.length)];
+                const photon2 = photons[Math.floor(Math.random() * photons.length)];
+                
+                if (photon1 !== photon2 && !photon1.quantum.entangled && !photon2.quantum.entangled) {
+                    createQuantumEntanglement(photon1, photon2);
+                    
+                    // Set specific Bell state
+                    photon1.quantum.bellState = 'Φ+';
+                    photon2.quantum.bellState = 'Φ+';
+                    
+                    // Position photons close to each other
+                    photon2.position.copy(photon1.position).add(new THREE.Vector3(0.5, 0, 0));
+                }
+            }
+        }
+        
+        function toggleMirrorMovement() {
+            mirrorMovement = !mirrorMovement;
+        }
+        
+        function resetQuantumSystem() {
+            // Clear existing particles
+            photons.length = 0;
+            atoms.length = 0;
+            totalPhotons = 0;
+            totalAtoms = 0;
+            
+            // Reset quantum states
+            quantumStates = {
+                entangledPairs: 0,
+                bellViolations: 0,
+                coherentStates: 0,
+                superpositionStates: 0,
+                totalEnergy: 0,
+                conservationEfficiency: 1.0
+            };
+            
+            // Reinitialize
+            initializeQuantumParticles();
+        }
+        
+        function isOutOfBounds(position) {
+            return Math.abs(position.x) > 30 || 
+                   Math.abs(position.y) > 20 || 
+                   Math.abs(position.z) > 20;
+        }
+        
+        function resetQuantumPhoton(photon) {
+            photon.position.set(
+                (Math.random() - 0.5) * 15,
+                (Math.random() - 0.5) * 8,
+                (Math.random() - 0.5) * 8
+            );
+            
+            photon.quantum.velocity.set(
+                (Math.random() - 0.5) * LIGHT_SPEED,
+                (Math.random() - 0.5) * LIGHT_SPEED,
+                (Math.random() - 0.5) * LIGHT_SPEED
+            );
+            
+            photon.quantum.energy = Math.random() * 3 + 1;
+            photon.quantum.phase = Math.random() * Math.PI * 2;
+            photon.quantum.coherenceTime = Math.random() * 100 + 50;
+            
+            if (photon.quantum.entangled) {
+                breakEntanglement(photon, photon.quantum.entangled);
+            }
+        }
+        
+        function resetQuantumAtom(atom) {
+            atom.position.set(
+                (Math.random() - 0.5) * 20,
+                (Math.random() - 0.5) * 10,
+                (Math.random() - 0.5) * 10
+            );
+            
+            atom.quantum.velocity.set(
+                (Math.random() - 0.5) * 0.02,
+                (Math.random() - 0.5) * 0.02,
+                (Math.random() - 0.5) * 0.02
+            );
+            
+            atom.quantum.excitationLevel = 0;
+            atom.quantum.energy = Math.random() * 2 + 0.5;
+            
+            if (atom.quantum.entangled) {
+                atom.quantum.entangled.quantum.entangled = null;
+                atom.quantum.entangled = null;
+            }
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // Fullscreen toggle
+        let isFullscreen = false;
+        
+        function toggleFullscreen() {
+            isFullscreen = !isFullscreen;
+            const info = document.getElementById('info');
+            const controls = document.querySelector('.control-panel');
+            const stats = document.querySelector('.quantum-stats');
+            const toggle = document.querySelector('.fullscreen-toggle');
+            
+            if (isFullscreen) {
+                info.classList.add('hidden');
+                controls.classList.add('hidden');
+                stats.classList.add('hidden');
+                toggle.innerHTML = '👁️';
+                toggle.style.opacity = '0.4';
+            } else {
+                info.classList.remove('hidden');
+                controls.classList.remove('hidden');
+                stats.classList.remove('hidden');
+                toggle.innerHTML = '👁';
+                toggle.style.opacity = '1';
+            }
+        }
+        
+        // Initialize the enhanced quantum system
+        init();
+    </script>
+</body>
+</html>
